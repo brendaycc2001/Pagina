@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #fce4ec; }
+        header {
+            background-color: #f06292;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+        header .menu-button, header .logout-button {
+            position: absolute;
+            top: 10px;
+            background-color: #ec407a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+        }
+        header .menu-button { left: 10px; }
+        header .logout-button { right: 10px; }
+        header .menu-button:hover, header .logout-button:hover {
+            background-color: #c2185b;
+        }
+        nav {
+            background-color: #f8bbd0;
+            color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem;
+        }
+        nav button {
+            padding: 0.7rem 1.5rem;
+            background-color: #ec407a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        nav button:hover {
+            background-color: #c2185b;
+        }
+        main { padding: 2rem; }
+        section { display: none; }
+        section.active { display: block; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        table, th, td {
+            border: 1px solid #f06292;
+        }
+        th, td {
+            padding: 0.8rem;
+            text-align: center;
+        }
+        th {
+            background-color: #f8bbd0;
+        }
+        .circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: green;
+        }
+        .motivo-container {
+            display: none;
+        }
+        .search-container {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            border: 1px solid #f06292;
+        }
+    </style>
+    <script>
+        let reservasData = [];
+        let pagosData = [];
+
+        // Cargar los datos desde localStorage y mostrar en las tablas
+        function loadData(type) {
+            if (type === 'reservar') {
+                reservasData = JSON.parse(localStorage.getItem('reservar')) || [];
+                renderTable(reservasData, type);
+            } else if (type === 'pagos') {
+                pagosData = JSON.parse(localStorage.getItem('pagos')) || [];
+                renderTable(pagosData, type);
+            }
+        }
+
+        // Función para renderizar la tabla con datos filtrados
+        function renderTable(data, type) {
+            const table = document.getElementById(`${type}-table`);
+            table.innerHTML = ''; // Limpiar la tabla antes de agregar los nuevos datos
+
+            if (type === 'reservar') {
+                table.innerHTML = `
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th>Hora de Entrada</th>
+                        <th>Hora de Salida</th>
+                        <th>Acciones</th>
+                    </tr>
+                `;
+                data.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.nombre}</td>
+                        <td>${item.fecha}</td>
+                        <td>${item.horaEntrada}</td>
+                        <td>${item.horaSalida}</td>
+                        <td>
+                            <button class="accept-btn" onclick="acceptRequest(${index}, '${type}')">Aceptar</button>
+                            <button class="reject-btn" onclick="rejectRequest(${index}, '${type}')">Rechazar</button>
+                            <div class="motivo-container" id="motivo-container-${type}-${index}">
+                                <textarea id="motivo-${type}-${index}" placeholder="Escribe el motivo..."></textarea>
+                                <button onclick="submitMotivo(${index}, '${type}')">Enviar Motivo</button>
+                            </div>
+                            <div id="circle-${type}-${index}" class="circle" style="display: none;"></div>
+                        </td>
+                    `;
+                    row.ondblclick = function () {
+                        showConfirmPopup(index, type);
+                    };
+                    table.appendChild(row);
+                });
+            } else if (type === 'pagos') {
+                table.innerHTML = `
+                    <tr>
+                        <th>Folio</th>
+                        <th>Fecha de Pago</th>
+                        <th>Monto</th>
+                        <th>Nombre del Remitente</th>
+                        <th>Acciones</th>
+                    </tr>
+                `;
+                data.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.folio}</td>
+                        <td>${item.fecha}</td>
+                        <td>${item.monto}</td>
+                        <td>${item.remitente}</td>
+                        <td>
+                            <button class="accept-btn" onclick="acceptRequest(${index}, '${type}')">Aceptar</button>
+                            <button class="reject-btn" onclick="rejectRequest(${index}, '${type}')">Rechazar</button>
+                            <div class="motivo-container" id="motivo-container-${type}-${index}">
+                                <textarea id="motivo-${type}-${index}" placeholder="Escribe el motivo..."></textarea>
+                                <button onclick="submitMotivo(${index}, '${type}')">Enviar Motivo</button>
+                            </div>
+                            <div id="circle-${type}-${index}" class="circle" style="display: none;"></div>
+                        </td>
+                    `;
+                    row.ondblclick = function () {
+                        showConfirmPopup(index, type);
+                    };
+                    table.appendChild(row);
+                });
+            }
+        }
+
+        // Función para la ventana emergente de confirmar eliminar o modificar
+        function showConfirmPopup(index, type) {
+            const action = prompt("¿Quieres modificar o eliminar este elemento? Escribe 'modificar' para modificar o 'eliminar' para eliminar.");
+            if (action === 'modificar') {
+                // Lógica para modificar el elemento
+                alert(`Vas a modificar el elemento en la tabla de ${type}.`);
+            } else if (action === 'eliminar') {
+                // Lógica para eliminar el elemento
+                if (type === 'reservar') {
+                    reservasData.splice(index, 1);
+                    localStorage.setItem('reservar', JSON.stringify(reservasData));
+                    renderTable(reservasData, type);
+                } else if (type === 'pagos') {
+                    pagosData.splice(index, 1);
+                    localStorage.setItem('pagos', JSON.stringify(pagosData));
+                    renderTable(pagosData, type);
+                }
+            }
+        }
+
+        // Función de búsqueda
+        function searchData(type) {
+            const query = document.getElementById(`${type}-search`).value.toLowerCase();
+            let filteredData = [];
+
+            if (type === 'reservar') {
+                filteredData = reservasData.filter(item => 
+                    item.nombre.toLowerCase().includes(query) ||
+                    item.fecha.toLowerCase().includes(query) ||
+                    item.horaEntrada.toLowerCase().includes(query) ||
+                    item.horaSalida.toLowerCase().includes(query)
+                );
+            } else if (type === 'pagos') {
+                filteredData = pagosData.filter(item =>
+                    item.folio.toLowerCase().includes(query) ||
+                    item.fecha.toLowerCase().includes(query) ||
+                    item.remitente.toLowerCase().includes(query)
+                );
+            }
+
+            renderTable(filteredData, type);
+        }
+
+        // Función para aceptar la solicitud
+        function acceptRequest(index, type) {
+            document.getElementById(`circle-${type}-${index}`).style.display = 'inline-block';
+            document.querySelector(`#motivo-container-${type}-${index}`).style.display = 'none';
+            hideButtons(index, type);
+        }
+
+        // Función para rechazar la solicitud
+        function rejectRequest(index, type) {
+            document.querySelector(`#motivo-container-${type}-${index}`).style.display = 'block';
+            hideButtons(index, type);
+        }
+
+        // Función para ocultar los botones
+        function hideButtons(index, type) {
+            const acceptBtn = document.querySelectorAll(`#${type}-table .accept-btn`)[index];
+            const rejectBtn = document.querySelectorAll(`#${type}-table .reject-btn`)[index];
+            acceptBtn.style.display = 'none';
+            rejectBtn.style.display = 'none';
+        }
+
+        // Función para enviar el motivo
+        function submitMotivo(index, type) {
+            const motivo = document.getElementById(`motivo-${type}-${index}`).value;
+            if (motivo) {
+                alert(`Motivo enviado: ${motivo}`);
+                document.querySelector(`#motivo-container-${type}-${index}`).style.display = 'none';
+            } else {
+                alert("Por favor, escribe un motivo.");
+            }
+        }
+
+        // Cambiar entre secciones
+        function showSection(sectionId) {
+            document.querySelectorAll('section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Redirigir al inicio de sesión
+        function logout() {
+            window.location.href = 'Proyectofinal.html';
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <button class="menu-button" onclick="loadData('reservar')">Ver Reservas</button>
+        <h1>Panel de Administrador</h1>
+        <button class="logout-button" onclick="logout()">Salir</button>
+    </header>
+    <nav>
+        <button onclick="showSection('reservas')">Reservas</button>
+        <button onclick="showSection('pagos')">Pagos</button>
+    </nav>
+    <main>
+        <section id="reservas" class="active">
+            <h2>Reservas</h2>
+            <div class="search-container">
+                <input type="text" id="reservar-search" class="search-input" placeholder="Buscar por nombre, fecha u hora" oninput="searchData('reservar')">
+            </div>
+            <table id="reservar-table">
+                <!-- Los datos de reservas se mostrarán aquí -->
+            </table>
+        </section>
+        <section id="pagos">
+            <h2>Pagos</h2>
+            <div class="search-container">
+                <input type="text" id="pagos-search" class="search-input" placeholder="Buscar por folio, fecha o remitente" oninput="searchData('pagos')">
+            </div>
+            <table id="pagos-table">
+                <!-- Los datos de pagos se mostrarán aquí -->
+            </table>
+        </section>
+    </main>
+    <script>
+        loadData('reservar');
+        loadData('pagos');
+    </script>
+</body>
+</html>
