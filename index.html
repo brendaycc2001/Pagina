@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffe4e1;
+        }
+        header {
+            background-color: #ff69b4;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        header img {
+            width: 100px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .buttons button {
+            padding: 1rem 2rem;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .buttons button:hover {
+            background-color: #ff85c1;
+        }
+        .form-container {
+            display: none;
+            max-width: 400px;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-container.active {
+            display: block;
+        }
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #ff69b4;
+        }
+        .form-container input {
+            width: 100%;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 0.7rem;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #ff85c1;
+        }
+    </style>
+    <script>
+        // Datos de usuarios predeterminados
+        const usuarios = {
+            admin: {
+                username: 'admin',
+                password: 'admin123',
+                role: 'admin'
+            },
+            user1: {
+                username: 'usuario1',
+                password: 'user123',
+                role: 'user'
+            },
+            user2: {
+                username: 'usuario2',
+                password: 'user123',
+                role: 'user'
+            }
+        };
+
+        // Mostrar formulario basado en el tipo (usuario o administrador)
+        function showForm(type) {
+            document.querySelectorAll('.form-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById(type).classList.add('active');
+        }
+
+        // Función para procesar el inicio de sesión
+        function login(event, role) {
+            event.preventDefault();
+            const username = document.getElementById(`${role}-username`).value;
+            const password = document.getElementById(`${role}-password`).value;
+
+            const user = Object.values(usuarios).find(u => u.username === username && u.password === password && u.role === role);
+
+            if (user) {
+                alert(`¡Bienvenido, ${username}!`);
+                if (role === 'admin') {
+                    window.location.href = 'PrincipalAdmi.html';  // Redirige al panel de administrador
+                } else {
+                    window.location.href = 'PrincipalUsuario.html';  // Redirige al panel de usuario
+                }
+            } else {
+                alert('Usuario o contraseña incorrectos');
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <img src="logoGYM.png" alt="Logo o Imagen">
+        <h1>GYM ATENEA</h1>
+    </header>
+
+    <main>
+        <div class="buttons">
+            <button onclick="showForm('user-login')">Usuario</button>
+            <button onclick="showForm('admin-login')">Administrador</button>
+        </div>
+
+        <section id="user-login" class="form-container">
+            <h2>Usuario</h2>
+            <form onsubmit="login(event, 'user')">
+                <label for="user-username">Usuario:</label>
+                <input type="text" id="user-username" name="username" required>
+
+                <label for="user-password">Contraseña:</label>
+                <input type="password" id="user-password" name="password" required>
+
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+        </section>
+
+        <section id="admin-login" class="form-container">
+            <h2>Administrador</h2>
+            <form onsubmit="login(event, 'admin')">
+                <label for="admin-username">Usuario Administrador:</label>
+                <input type="text" id="admin-username" name="admin-username" required>
+
+                <label for="admin-password">Contraseña:</label>
+                <input type="password" id="admin-password" name="admin-password" required>
+
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
+
